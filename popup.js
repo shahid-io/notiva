@@ -1,4 +1,7 @@
-import { createNoteId, getNotes, getNotesForUrl, normalizeUrl } from "./storage.js";
+import { MESSAGE_TYPES } from "./shared/constants.js";
+import { getReminderState, sortNotes } from "./shared/note-state.js";
+import { createNoteId, getNotes, getNotesForUrl, normalizeUrl } from "./shared/storage.js";
+import { createBellIcon, createCheckIcon, createEditIcon, createTrashIcon } from "./popup/icons.js";
 
 const form = document.getElementById("note-form");
 const noteIdInput = document.getElementById("note-id");
@@ -64,7 +67,7 @@ async function handleSubmit(event) {
   };
 
   const response = await chrome.runtime.sendMessage({
-    type: "notiva:save-note",
+    type: MESSAGE_TYPES.SAVE_NOTE,
     note
   });
 
@@ -159,7 +162,7 @@ function createNoteCard(note) {
   completeButton.setAttribute("aria-label", completeButton.title);
   completeButton.appendChild(createCheckIcon());
   completeButton.addEventListener("click", async () => {
-    await chrome.runtime.sendMessage({ type: "notiva:toggle-note-complete", noteId: note.id });
+    await chrome.runtime.sendMessage({ type: MESSAGE_TYPES.TOGGLE_NOTE_COMPLETE, noteId: note.id });
     setStatus(note.completedAt ? "Note marked as active." : "Note marked as completed.");
     await renderNotes();
   });
@@ -179,7 +182,7 @@ function createNoteCard(note) {
   deleteButton.setAttribute("aria-label", "Delete note");
   deleteButton.appendChild(createTrashIcon());
   deleteButton.addEventListener("click", async () => {
-    await chrome.runtime.sendMessage({ type: "notiva:delete-note", noteId: note.id });
+    await chrome.runtime.sendMessage({ type: MESSAGE_TYPES.DELETE_NOTE, noteId: note.id });
     setStatus("Note deleted.");
     await renderNotes();
   });
@@ -216,66 +219,6 @@ function togglePageFilter() {
 
 function setStatus(message) {
   statusElement.textContent = message;
-}
-
-function getReminderState(note) {
-  if (!note.reminderTimestamp || note.completedAt) {
-    return "none";
-  }
-
-  return Number(note.reminderTimestamp) <= Date.now() ? "due" : "scheduled";
-}
-
-function createBellIcon() {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("aria-hidden", "true");
-  svg.classList.add("bell-icon");
-
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("fill", "currentColor");
-  path.setAttribute("d", "M12 2a4 4 0 0 0-4 4v1.1c0 1.2-.4 2.4-1.1 3.3L5 13v2h14v-2l-1.9-2.6A5.6 5.6 0 0 1 16 7.1V6a4 4 0 0 0-4-4Zm0 20a3 3 0 0 0 2.8-2H9.2A3 3 0 0 0 12 22Z");
-  svg.appendChild(path);
-
-  return svg;
-}
-
-function createCheckIcon() {
-  return createStrokeIcon("M20 6 9 17l-5-5");
-}
-
-function createEditIcon() {
-  return createStrokeIcon("M4 20h4l10.5-10.5a2.1 2.1 0 0 0-4-4L4 16v4ZM13.5 6.5l4 4");
-}
-
-function createTrashIcon() {
-  return createStrokeIcon("M5 7h14M9 7V5h6v2M8 7v12M16 7v12M6 7l1 13h10l1-13");
-}
-
-function createStrokeIcon(pathData) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("aria-hidden", "true");
-  svg.classList.add("action-icon");
-
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "currentColor");
-  path.setAttribute("stroke-width", "1.8");
-  path.setAttribute("stroke-linecap", "round");
-  path.setAttribute("stroke-linejoin", "round");
-  path.setAttribute("d", pathData);
-  svg.appendChild(path);
-
-  return svg;
-}
-
-function sortNotes(left, right) {
-  if (Boolean(left.completedAt) !== Boolean(right.completedAt)) {
-    return left.completedAt ? 1 : -1;
-  }
-
-  return (right.createdAt || 0) - (left.createdAt || 0);
 }
 
 function formatDate(timestamp) {

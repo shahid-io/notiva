@@ -1,7 +1,7 @@
-import { createReminderNotification } from "./notifications.js";
-import { createNoteId, deleteNote, getNotes, normalizeUrl, saveNotes, upsertNote } from "./storage.js";
-
-const CONTEXT_MENU_ID = "notiva-save-selection";
+import { ALARM_PREFIX, CONTEXT_MENU_ID, getAlarmName, MESSAGE_TYPES } from "./shared/constants.js";
+import { isReminderDue } from "./shared/note-state.js";
+import { createReminderNotification } from "./shared/notifications.js";
+import { createNoteId, deleteNote, getNotes, normalizeUrl, upsertNote } from "./shared/storage.js";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -48,11 +48,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (!alarm.name.startsWith("note:")) {
+  if (!alarm.name.startsWith(ALARM_PREFIX)) {
     return;
   }
 
-  const noteId = alarm.name.slice(5);
+  const noteId = alarm.name.slice(ALARM_PREFIX.length);
   const notes = await getNotes();
   const note = notes.find((entry) => entry.id === noteId);
 
@@ -65,7 +65,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "notiva:get-page-notes") {
+  if (message?.type === MESSAGE_TYPES.GET_PAGE_NOTES) {
     getNotes().then((notes) => {
       const pageNotes = notes.filter((note) => note.url && normalizeUrl(note.url) === normalizeUrl(message.url));
       sendResponse({ notes: pageNotes });
@@ -73,21 +73,21 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "notiva:save-note") {
+  if (message?.type === MESSAGE_TYPES.SAVE_NOTE) {
     saveOrUpdateNote(message.note)
       .then((note) => sendResponse({ note }))
       .catch((error) => sendResponse({ error: error.message }));
     return true;
   }
 
-  if (message?.type === "notiva:delete-note") {
+  if (message?.type === MESSAGE_TYPES.DELETE_NOTE) {
     deleteStoredNote(message.noteId)
       .then(() => sendResponse({ success: true }))
       .catch((error) => sendResponse({ error: error.message }));
     return true;
   }
 
-  if (message?.type === "notiva:toggle-note-complete") {
+  if (message?.type === MESSAGE_TYPES.TOGGLE_NOTE_COMPLETE) {
     toggleNoteComplete(message.noteId)
       .then((note) => sendResponse({ note }))
       .catch((error) => sendResponse({ error: error.message }));
@@ -111,7 +111,7 @@ async function saveOrUpdateNote(note) {
 }
 
 async function deleteStoredNote(noteId) {
-  await chrome.alarms.clear(`note:${noteId}`);
+  await chrome.alarms.clear(getAlarmName(noteId));
   await deleteNote(noteId);
   await refreshActionState();
 }
@@ -136,7 +136,7 @@ async function toggleNoteComplete(noteId) {
 }
 
 async function syncAlarm(note) {
-  const alarmName = `note:${note.id}`;
+  const alarmName = getAlarmName(note.id);
   await chrome.alarms.clear(alarmName);
 
   if (!note.reminderTimestamp || note.completedAt) {
@@ -177,10 +177,6 @@ async function refreshActionState() {
       ? `Notiva (${dueCount} reminder${dueCount === 1 ? "" : "s"} due)`
       : "Notiva"
   });
-}
-
-function isReminderDue(note) {
-  return Boolean(note.reminderTimestamp) && !note.completedAt && Number(note.reminderTimestamp) <= Date.now();
 }
 
 migrateExistingAlarms();

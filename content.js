@@ -1,10 +1,13 @@
+import { MESSAGE_TYPES } from "./shared/constants.js";
+import { isReminderDue } from "./shared/note-state.js";
+
 (async function initNotivaPageHint() {
   if (!window.location?.href.startsWith("http")) {
     return;
   }
 
   const response = await chrome.runtime.sendMessage({
-    type: "notiva:get-page-notes",
+    type: MESSAGE_TYPES.GET_PAGE_NOTES,
     url: window.location.href
   });
 
@@ -22,15 +25,16 @@ function renderHint(notes) {
   }
 
   const noteCount = notes.length;
-  const hasDueReminder = notes.some((note) => note.reminderTimestamp && Number(note.reminderTimestamp) <= Date.now());
+  const dueCount = notes.filter(isReminderDue).length;
+  const hasDueReminder = dueCount > 0;
 
   const hint = document.createElement("button");
   hint.id = "notiva-page-hint";
   hint.type = "button";
   hint.textContent = hasDueReminder
-    ? noteCount === 1
+    ? dueCount === 1
       ? "Reminder due for 1 note on this page"
-      : `Reminders due for ${noteCount} notes on this page`
+      : `Reminders due for ${dueCount} notes on this page`
     : noteCount === 1
       ? "You have 1 note for this page"
       : `You have ${noteCount} notes for this page`;
