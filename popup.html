@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notiva</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="popup-body">
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="app-header-main">
+          <h1>Notes</h1>
+          <p class="header-copy">Quick capture for this page</p>
+        </div>
+      </header>
+
+      <section class="panel">
+        <form id="note-form" class="note-form">
+          <input type="hidden" id="note-id" />
+          <input type="hidden" id="note-completed-at" />
+
+          <label class="field">
+            <span>Title</span>
+            <input id="title" name="title" type="text" maxlength="120" placeholder="Review React Fiber" />
+          </label>
+
+          <label class="field">
+            <span>Note</span>
+            <textarea id="content" name="content" rows="5" maxlength="5000" placeholder="Understand reconciliation and scheduling."></textarea>
+          </label>
+
+          <label class="field">
+            <span>Reminder</span>
+            <input id="reminder" name="reminder" type="datetime-local" />
+          </label>
+
+          <label class="checkbox-row">
+            <input id="attach-url" name="attach-url" type="checkbox" checked />
+            <span>Attach to current page</span>
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-button">Save note</button>
+            <button type="button" id="reset-button" class="secondary-button">Clear</button>
+          </div>
+
+          <p id="status" class="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="panel notes-panel">
+        <div class="panel-heading">
+          <h2>Your notes</h2>
+          <button type="button" id="filter-page-button" class="ghost-button">Current page</button>
+        </div>
+
+        <div id="empty-state" class="empty-state" hidden>
+          <p>No notes yet. Save one above or highlight text on a page and use the context menu.</p>
+        </div>
+
+        <ul id="notes-list" class="notes-list"></ul>
+      </section>
+    </main>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

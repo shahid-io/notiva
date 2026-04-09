@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Notiva",
+  "description": "Capture notes, link them to pages, and schedule reminders.",
+  "version": "1.0.0",
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms",
+    "activeTab",
+    "contextMenus",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icons/notiva-16.png",
+    "32": "icons/notiva-32.png",
+    "48": "icons/notiva-48.png",
+    "128": "icons/notiva-128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/notiva-16.png",
+      "32": "icons/notiva-32.png"
+    },
+    "default_popup": "popup.html",
+    "default_title": "Notiva"
+  },
+  "commands": {
+    "quick_note": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+N",
+        "mac": "Command+Shift+N"
+      },
+      "description": "Open Notiva quick note popup"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
